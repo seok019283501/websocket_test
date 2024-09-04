@@ -12,7 +12,7 @@ app.use(express.static(__dirname + '/img'));
 
 app.use(cors({ origin: 'http://localhost:3000'}));
 
-app.set('port',process.env.PORT || 8000);
+app.set('port',process.env.PORT || 1234);
 
 app.use((req,res,next)=>{
   const err = new Error(`${req.method} ${req.url} 라우터가 없습니다.`);
@@ -33,3 +33,25 @@ const server = app.listen(app.get('port'),()=>{
 })
 
 websocket(server);
+
+// const express = require('express')
+// const bodyParser = require('body-parser')
+// const  cors = require('cors');
+// const app = express()
+// app.use(bodyParser.json())
+// app.use(cors());
+// app.use(cors({ origin: 'http://localhost:3000'}));
+
+// app.post('/my', (req, res) => {
+//   const docId = req.body.doc_id
+//   const projectId = req.body.project_id
+//   const initContext = req.body.file_content
+//   console.log(docId, projectId, initContext)
+//   initTpl(docId, projectId, initContext)
+//   res.send('success')
+// })
+
+// app.listen(8000, () => {
+//   console.log('started')
+// })
+
