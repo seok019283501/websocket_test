@@ -1,75 +1,84 @@
-const websocket = require('ws');
-const { WebsocketProvider } = require('y-websocket')
-const Y = require('yjs')
-
-
-  // const ydoc = new Y.Doc()
-  // const ytext = ydoc.getText(docId)
-  // console.log(ytext)
-  // const wsProvider = new WebsocketProvider('ws://localhost:1234', docId, ydoc, { WebSocketPolyfill: require('ws') })
-  // wsProvider.on('status', (event) => {
-  //   console.log(event.status)
-  //   if (event.status === 'connected') {
-  //     if (wsProvider.ws) {
-  //       if (initContext && initContext.length > 0) {
-  //         console.log('write: {}', initContext)
-  //         ytext.insert(0, initContext)
-  //       }
-  //     }
-  //   }
-  // })
+const { WebsocketProvider } = require('y-websocket');
+const ws = require('ws');
+const Y = require('yjs');
+const {RealTimeCollaborative} = require('./db/schemas/realTimeCollaborative.js')
+// const realTimeCollaborative = require('./db/schemas/realTimeCollaborative.js')
 
 module.exports = (server) => {
-  const wss = new websocket.Server( 
-    {
-        server: server, // WebSocket서버에 연결할 HTTP서버를 지정한다.
-        // port: 8080, // WebSocket연결에 사용할 port를 지정한다(생략시, http서버와 동일한 port 공유 사용)
-    }
-  );
-  const ydoc = new Y.Doc()
-  const wsProvider = new WebsocketProvider('ws://localhost:1234', 'my', ydoc, { WebSocketPolyfill: require('ws') })
-  wsProvider.on('status', (event) => {
-      console.log(event)
+  console.log(ws);
+  // Yjs 문서 및 WebSocket Provider 설정
+  const ydoc = [new Y.Doc(),new Y.Doc];
+
+  // const wsProvider = new WebsocketProvider('ws://localhost:1234', 'my-roomname', ydoc, { 
+  //   WebSocketPolyfill: require('ws'),
+  // });
+  let wsProviderList = [
+    new WebsocketProvider('ws://localhost:1234', 'my-roomname', ydoc[0], { 
+    WebSocketPolyfill: ws})
+  ,new WebsocketProvider('ws://localhost:1234', '2', ydoc[1], { 
+    WebSocketPolyfill: ws,
+  })];
+  wsProviderList.forEach((wsProvider,index)=>{
+    // 연결 상태 로그
+  wsProvider.on('status', async(event) => {
+    // const existingDocument = await RealTimeCollaborative.findOne({ id: 3 });
+    // let count = 0;
+    // let text = '';
+    // const uint8Array = new Uint8Array(existingDocument.text);
+    // Y.applyUpdate(ydoc[index], uint8Array);
+    // // console.log(uint8Array);
+    // console.log(existingDocument.text)
+    // if(event.status == 'connected' && count === 0){
+    //   count +=1;
       
-  })
+    //   const text = ydoc[index].getText('my-text');
 
-  wsProvider.on('connected', (ws,req) => {
-    console.log(event)
-    ws.on('message', (msg)=>{
-            console.log(msg)
-        })
-    
-  })
-
-  
-  wss.on('connection', (ws, request)=>{
-    // 1) 연결 클라이언트 IP 취득
-    const ip = request.headers['x-forwarded-for'] || request.connection.remoteAddress;
-    
-    console.log(`새로운 클라이언트[${ip}] 접속`);
-    console.log("Asdf")
-    // 2) 클라이언트에게 메시지 전송
-    // if(ws.readyState === ws.OPEN){ // 연결 여부 체크
-    //     ws.send(`클라이언트[${ip}] 접속을 환영합니다 from 서버`); // 데이터 전송
+    //   text.insert(0,existingDocument.text)
     // }
-    // 3) 클라이언트로부터 메시지 수신 이벤트 처리
-    ws.on('message', (msg)=>{
-        console.log(msg)
-        const ydoc = new Y.Doc()
-        
-    })
-    
-    console.log(`새로운 유저 : ${request.socket.remoteAddress}`)
-    
-    // 4) 에러 처러
-    ws.on('error', (error)=>{
-        console.log(`클라이언트[${ip}] 연결 에러발생 : ${error}`);
-    })
-    
-    // 5) 연결 종료 이벤트 처리
-    ws.on('close', ()=>{
-        console.log(`클라이언트[${ip}] 웹소켓 연결 종료`);
-    })
-  });
-}
 
+    console.log(`Connection status: ${event.status}`);
+    wsProvider.ws.on('message', async(message) => {
+      // console.log('Received raw message:', message);
+    // wsProvider.ws.send(text)
+      
+      // let update;
+      // if (message instanceof ArrayBuffer) {
+      //   update = new Uint8Array(message);
+      // } else if (Buffer.isBuffer(message)) {
+      //   update = new Uint8Array(message);
+      // } else {
+      //   console.error('Unexpected message format:', typeof message);
+      //   return;
+      // }
+      const update = Y.encodeStateAsUpdate(ydoc[index]);
+      // console.log(update)
+      // console.log(JSON.stringify(Y.decodeUpdate(update).structs))
+      // const buffer = Buffer.from(update);
+      // RealTimeCollaborative.create({id:3, name:'my-room3',text:buffer})
+      // console.log(JSON.parse(existingDocument.text))
+      try {
+        // Yjs 문서 업데이트 적용
+        // Y.applyUpdate(ydoc[index], new Uint8Array(JSON.parse(existingDocument.text)));
+        // console.log('Document updated successfully');
+        // console.log(existingDocument.text);
+        // Yjs 문서 내용 출력 (텍스트로 변환)
+        // console.log(text.toString());
+        // const text = ydoc[index].getText('default');
+        
+        // console.log(text)
+        // console.log('Document content:', text.toString());
+
+      } catch (error) {
+        console.error('Error applying update:', error);
+      }
+    });
+
+  });
+  // Yjs 문서가 동기화될 때 발생하는 이벤트
+  wsProvider.on('sync', (isSynced) => {
+    console.log(`Document is synced: ${isSynced}`);
+  });
+  })
+  
+
+};
